@@ -9,6 +9,8 @@
 #include <fstream>
 #include <ctime>
 #include <ncurses.h>
+#include <unistd.h>
+#include <termio.h>
 
 //import simplification
 using std::string;
@@ -103,21 +105,26 @@ void printStack(std::stack<char> &stack){
 }
 
 
+
 int race(std::stack<char> &stack) {
-    char ch;
     int counter = 0;
+    struct termios oldt, newt;
+    tcgetattr(STDIN_FILENO, &oldt);
+    newt = oldt;
+    newt.c_lflag &= ~(ICANON | ECHO);
+    tcsetattr(STDIN_FILENO, TCSANOW, &newt);
+    int ch;
     while (!stack.empty()) {
-        ch = getch();
-        if (ch == ERR) // No input available
-            continue;
-        if (ch >= 32 && ch <= 126) { // Check if printable ASCII
-            std::cout << ch;
-            if (ch == stack.top()) {
-                stack.pop();
-            }
-            ++counter;
+        ch = getchar();
+        if (ch == EOF) break;
+        std::cout << static_cast<char>(ch);
+        if (ch == stack.top()) {
+            stack.pop();
         }
+        ++counter;
     }
+    tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
     return counter;
 }
+
 
