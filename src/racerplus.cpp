@@ -4,6 +4,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <iostream>
+#include <ostream>
 #include <string>
 #include <stack>
 #include <fstream>
@@ -33,7 +34,8 @@ int  main (int argc, char *argv[]) {
   char restart;
   while (restart == 'y' || first == true){
     int a = gameLoop();
-    std::cout << "Do you want to play again? \n(Y)es\n(N)o";
+    
+    std::cout << "Do you want to play again? \n(Y)es\n(N)o\n";
     std::cin >> restart;
     restart = (char) tolower(restart);
     first = false;
@@ -117,11 +119,14 @@ int race(std::stack<char> &stack) {
     while (!stack.empty()) {
         ch = getchar();
         if (ch == EOF) break;
-        std::cout << static_cast<char>(ch);
         if (ch == stack.top()) {
+            std::cout << "\033[1;32m" <<static_cast<char>(ch) << "\033[0m";
             stack.pop();
+            ++counter;
         }
-        ++counter;
+        else{
+            std::cout << "\033[1;31m" << static_cast<char>(ch) << "\033[0m";
+    }
     }
     tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
     return counter;
