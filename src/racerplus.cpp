@@ -1,4 +1,6 @@
 //imports
+#include <algorithm>
+#include <cctype>
 #include <cstdio>
 #include <cstdlib>
 #include <iostream>
@@ -6,6 +8,7 @@
 #include <stack>
 #include <fstream>
 #include <ctime>
+#include <ncurses.h>
 
 //import simplification
 using std::string;
@@ -18,11 +21,24 @@ int getTextsAmount();
 string getText(int pos); 
 std::stack<char>  initializeStack(string text);
 void printStack(std::stack<char> &stack);
-
+int gameLoop();
+int race(std::stack<char> &stack);
 //functions
 
 //main method
 int  main (int argc, char *argv[]) {
+  bool first = true;
+  char restart;
+  while (restart == 'y' || first == true){
+    int a = gameLoop();
+    std::cout << "Do you want to play again? \n(Y)es\n(N)o";
+    std::cin >> restart;
+    restart = (char) tolower(restart);
+    first = false;
+  }
+}
+
+int gameLoop(){
   int ch;
   int fileLength = getTextsAmount();
   std::srand(std::time(nullptr));
@@ -31,6 +47,7 @@ int  main (int argc, char *argv[]) {
   
   std::stack<char> stack = initializeStack(text);
   printStack(stack);
+  int accuracy = race(stack);
   return 0;
 }
 
@@ -84,3 +101,23 @@ void printStack(std::stack<char> &stack){
   }
   std::cout << std::endl;
 }
+
+
+int race(std::stack<char> &stack) {
+    char ch;
+    int counter = 0;
+    while (!stack.empty()) {
+        ch = getch();
+        if (ch == ERR) // No input available
+            continue;
+        if (ch >= 32 && ch <= 126) { // Check if printable ASCII
+            std::cout << ch;
+            if (ch == stack.top()) {
+                stack.pop();
+            }
+            ++counter;
+        }
+    }
+    return counter;
+}
+
