@@ -1,5 +1,4 @@
 //imports
-#include <algorithm>
 #include <cctype>
 #include <cstdio>
 #include <cstdlib>
@@ -12,13 +11,16 @@
 #include <ncurses.h>
 #include <unistd.h>
 #include <termio.h>
+#include <chrono>
+#include "SQLManagerPerformances.h"
+
 
 //import simplification
 using std::string;
 
 //global variables
 const string filename = "texts.txt";
-
+std::string name;
 //function declaration
 int getTextsAmount();
 string getText(int pos); 
@@ -32,6 +34,8 @@ int race(std::stack<char> &stack);
 int  main (int argc, char *argv[]) {
   bool first = true;
   char restart;
+  std::cout << "USERNAME: ";
+  std::cin >> name;
   while (restart == 'y' || first == true){
     int a = gameLoop();
     
@@ -109,27 +113,40 @@ void printStack(std::stack<char> &stack){
 
 
 int race(std::stack<char> &stack) {
-    int counter = 0;
-    struct termios oldt, newt;
-    tcgetattr(STDIN_FILENO, &oldt);
-    newt = oldt;
-    newt.c_lflag &= ~(ICANON | ECHO);
-    tcsetattr(STDIN_FILENO, TCSANOW, &newt);
-    int ch;
-    while (!stack.empty()) {
-        ch = getchar();
-        if (ch == EOF) break;
-        if (ch == stack.top()) {
-            std::cout << "\033[1;32m" <<static_cast<char>(ch) << "\033[0m";
-            stack.pop();
-            ++counter;
-        }
-        else{
-            std::cout << "\033[1;31m" << static_cast<char>(ch) << "\033[0m";
+  int counter = 0;
+  struct termios oldt, newt;
+  tcgetattr(STDIN_FILENO, &oldt);
+  newt = oldt;
+  newt.c_lflag &= ~(ICANON | ECHO);
+  tcsetattr(STDIN_FILENO, TCSANOW, &newt);
+  int ch;
+  auto start = std::chrono::steady_clock::now();
+  int words = 1;
+  while (!stack.empty()) {
+    
+    ch = getchar();
+    if (ch == EOF) break;
+    if (ch == stack.top()) {
+      if (ch == ' '){
+        ++words;
+      }
+      std::cout << "\033[1;32m" <<static_cast<char>(ch) << "\033[0m";
+      stack.pop();
+      ++counter;
     }
-    }
-    tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
-    return counter;
+    else{
+      std::cout << "\033[1;31m" << static_cast<char>(ch) << "\033[0m";
+  }
+  }
+  auto end = std::chrono::steady_clock::now();
+  auto duration = std::chrono::duration_cast<std::chrono::seconds>(end - start);
+  tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
+  Performance performance;
+  int time = static_cast<int>(duration.count());
+  performance.name = name;
+  performance.speed = (words/time)*60;
+  ManagerPerformancesMain(&performance);
+  return counter;
 }
 
 
