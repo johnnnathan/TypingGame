@@ -1,19 +1,19 @@
 //imports
 #include <cctype>
+#include <cstddef>
 #include <cstdio>
 #include <cstdlib>
 #include <iostream>
 #include <ostream>
 #include <string>
 #include <stack>
-#include <fstream>
 #include <ctime>
 #include <ncurses.h>
 #include <unistd.h>
 #include <termio.h>
 #include <chrono>
 #include "SQLManagerPerformances.h"
-
+#include "SQLManagerTexts.h"
 
 //import simplification
 using std::string;
@@ -21,13 +21,15 @@ using std::string;
 //global variables
 const string filename = "texts.txt";
 std::string name;
+sqlite3* DB;
+const char* textsFile = "texts.db";
 //function declaration
-int getTextsAmount();
-string getText(int pos); 
+std::string* getText(); 
 std::stack<char>  initializeStack(string text);
 void printStack(std::stack<char> &stack);
 int gameLoop();
-int race(std::stack<char> &stack);
+int race(std::stack<char> &stack, int ID);
+void decodeRow(const std::string& text, std::string* row);
 //functions
 
 //main method
@@ -45,54 +47,40 @@ int  main (int argc, char *argv[]) {
     first = false;
   }
 }
-
-int gameLoop(){
-  int ch;
-  int fileLength = getTextsAmount();
-  std::srand(std::time(nullptr));
-  int textnr = (std::rand() % fileLength);
-  string text = getText(textnr);
-  
-  std::stack<char> stack = initializeStack(text);
-  printStack(stack);
-  int accuracy = race(stack);
+int initializeTextsDB(){
+  sqlite3* DB;
+  openTable(DB);
+  TcreateTable(DB);
   return 0;
 }
 
 
-//get the length of the texts file, need to know to pick a random line from the file, return the length in int form
-int getTextsAmount(){
+int gameLoop(){
   int ch;
-  int fileLength = 0;
-  std::ifstream infile(filename);
-
-  if (!infile.is_open()){
-    return 1;
-  }
-  std::string line;
-
-  while (std::getline(infile,line)){
-    ++fileLength;
-  }
-
-  infile.close();
-  return fileLength;
+  std::string* rowPtr = getText();
+  int textID = std::stoi(rowPtr[0]);
+  std::string text = rowPtr[1];
+  std::stack<char> stack = initializeStack(text);
+  printStack(stack);
+  int accuracy = race(stack, textID);
+  return 0;
 }
 
-//gets a text from the texts file using the position that is given to it, returns the content of the line 
-string getText(int pos){
-  std::ifstream infile(filename);
-  string line;
-  if (!infile.is_open()){
-    return "";
-  }
-  for (int i = 0; i <= pos; i++){
-    std::getline(infile, line); 
-  }
-  infile.close();
-  return line;
+
+
+//returns a random row from the texts SQL file
+std::string* getText(){
+  std::string text = returnRandom(DB);
+  std::string* row = new std::string[2];
+  decodeRow(text, row);
+  return row;
 }
 
+void decodeRow(const std::string& text, std::string* row){
+  size_t pos = text.find(',');
+  row[0] = text.substr(0,pos);
+  row[1] = text.substr(pos + 1);
+}
 std::stack<char> initializeStack(string text){
   std::stack<char> stack;
   for (int i = text.length() - 1; i > -1; i--){
@@ -112,7 +100,7 @@ void printStack(std::stack<char> &stack){
 
 
 
-int race(std::stack<char> &stack) {
+int race(std::stack<char> &stack, int ID) {
   int counter = 0;
   struct termios oldt, newt;
   tcgetattr(STDIN_FILENO, &oldt);
@@ -128,7 +116,7 @@ int race(std::stack<char> &stack) {
     if (ch == EOF) break;
     if (ch == stack.top()) {
       if (ch == ' '){
-        ++words;
+        words += 1;
       }
       std::cout << "\033[1;32m" <<static_cast<char>(ch) << "\033[0m";
       stack.pop();
@@ -145,6 +133,7 @@ int race(std::stack<char> &stack) {
   int time = static_cast<int>(duration.count());
   performance.name = name;
   performance.speed = (words/time)*60;
+  performance.textID = ID;
   ManagerPerformancesMain(&performance);
   return counter;
 }
