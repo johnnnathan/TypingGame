@@ -15,7 +15,10 @@ std::pair<int, std::string> returnRandom(sqlite3* DB);
 
 const char *filename = "texts.db";
 
-
+int main (int argc, char *argv[]) {
+  addTexts();
+  return 0;
+}
 int addTexts() {
   
   sqlite3* DB;
@@ -31,7 +34,7 @@ int addTexts() {
   TcreateTable(DB);
 
   std::cout << "GIVE THE TEXT THAT YOU WANT TO ADD TO THE DATABASE: ";
-  std::cin >> ttba;
+  getline(std::cin, ttba);
 
   insertData(DB, ttba);
 

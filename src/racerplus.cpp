@@ -120,6 +120,7 @@ int race(std::stack<char> &stack, int ID) {
   tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
   Performance performance;
   int time = static_cast<int>(duration.count());
+  std::cout << time;
   performance.name = name;
   performance.speed = (words/time)*60;
   performance.textID = ID;
