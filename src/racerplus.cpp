@@ -1,10 +1,10 @@
 //imports
 #include <cctype>
-#include <cstddef>
 #include <cstdio>
 #include <cstdlib>
 #include <iostream>
 #include <ostream>
+#include <sstream>
 #include <string>
 #include <stack>
 #include <ctime>
@@ -21,23 +21,22 @@ using std::string;
 //global variables
 const string filename = "texts.txt";
 std::string name;
-sqlite3* DB;
 const char* textsFile = "texts.db";
 //function declaration
-std::string* getText(); 
+std::pair <int,std::string> getText(); 
 std::stack<char>  initializeStack(string text);
 void printStack(std::stack<char> &stack);
 int gameLoop();
 int race(std::stack<char> &stack, int ID);
-void decodeRow(const std::string& text, std::string* row);
 //functions
 
 //main method
 int  main (int argc, char *argv[]) {
   bool first = true;
-  char restart;
+  char restart = 'n';
   std::cout << "USERNAME: ";
   std::cin >> name;
+  std::cout << std::endl;
   while (restart == 'y' || first == true){
     int a = gameLoop();
     
@@ -47,19 +46,14 @@ int  main (int argc, char *argv[]) {
     first = false;
   }
 }
-int initializeTextsDB(){
-  sqlite3* DB;
-  openTable(DB);
-  TcreateTable(DB);
-  return 0;
-}
-
 
 int gameLoop(){
   int ch;
-  std::string* rowPtr = getText();
-  int textID = std::stoi(rowPtr[0]);
-  std::string text = rowPtr[1];
+  std::pair<int,std::string> rowPtr = getText();
+  std::cout << "DEBUG: GOT ROW FROM DATABASE: " << rowPtr.first<<" " << rowPtr.second<<  std::endl;
+  int textID = rowPtr.first;
+  std::string text = rowPtr.second;
+  std::cout << text << std::endl;
   std::stack<char> stack = initializeStack(text);
   printStack(stack);
   int accuracy = race(stack, textID);
@@ -69,18 +63,13 @@ int gameLoop(){
 
 
 //returns a random row from the texts SQL file
-std::string* getText(){
-  std::string text = returnRandom(DB);
-  std::string* row = new std::string[2];
-  decodeRow(text, row);
-  return row;
+std::pair<int,std::string> getText(){
+  std::pair<int,std::string> infoPair = getRandom();
+  return infoPair;
 }
 
-void decodeRow(const std::string& text, std::string* row){
-  size_t pos = text.find(',');
-  row[0] = text.substr(0,pos);
-  row[1] = text.substr(pos + 1);
-}
+
+
 std::stack<char> initializeStack(string text){
   std::stack<char> stack;
   for (int i = text.length() - 1; i > -1; i--){
